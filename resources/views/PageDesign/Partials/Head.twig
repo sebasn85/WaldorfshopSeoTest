@@ -12,6 +12,9 @@
 
 {% set canonicalUrl = services.url.getCanonicalURL() %}
 {% set languageUrls = services.url.getLanguageURLs() %}
+{# Align this existing help page with its sitemap URL; no global URL setting. #}
+{% set t08CanonicalAliases = {'https://www.waldorfshop.eu/beratung/bestellhilfe/': 'https://www.waldorfshop.eu/beratung/bestellhilfe'} %}
+{% set canonicalUrl = t08CanonicalAliases[canonicalUrl] | default(canonicalUrl) %}
 {% set canonicalQueryString = services.url.getCanonicalQueryString() %}
 
 {# T08: Only the unfiltered first category page duplicates the base URL.
@@ -31,7 +34,7 @@
 {# old: {% if services.url.isCanonical() or request.get('env') == "testing" %} #}
 {% if languageUrls is not empty or request.get('env') == "testing" %}
     {% for language, url in languageUrls %}
-        <link rel="alternate" hreflang="{{language}}" href="{{url}}"/>
+        <link rel="alternate" hreflang="{{language}}" href="{{ t08CanonicalAliases[url] | default(url) }}"/>
     {% endfor %}
 {% endif %}
 
