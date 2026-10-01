@@ -7,6 +7,15 @@
 {% set topButtonPosition    = config('Ceres.footer.to_top_button') %}
 
 {% set footerContainer = LayoutContainer.show("Ceres::Footer") | trim %}
+{# Match published shipping terms without changing shared ShopBuilder data. #}
+{% if lang == 'fr' %}
+    {% set footerContainer = footerContainer | replace({'à partir de 99 €': 'à partir de 129 €', 'à partir de 99&nbsp;€': 'à partir de 129&nbsp;€'}) %}
+{% elseif lang == 'it' %}
+    {% set footerContainer = footerContainer | replace({'a partire da 99 €': 'a partire da 129 €', 'a partire da 99&nbsp;€': 'a partire da 129&nbsp;€'}) %}
+{% elseif lang == 'es' %}
+    {% set footerContainer = footerContainer | replace({'a partir de 99 €': 'a partir de 129 €', 'a partir de 99&nbsp;€': 'a partir de 129&nbsp;€', 'a partir de 99 euros': 'a partir de 129 euros'}) %}
+{% endif %}
+
 {% if footerContainer is empty %}
 
 <div class="footer d-print-none footer-test">
