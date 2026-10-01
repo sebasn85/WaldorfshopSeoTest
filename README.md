@@ -7,7 +7,7 @@ Original plugin metadata identifies Universnatur GmbH as author and AGPL-3.0 as 
 
 ## Scope
 
-Version 0.2.0 additionally aligns the German order-help canonical, hreflang and footer link with the existing sitemap URL (without trailing slash). Product Offer URLs use the current variant canonical. Category item links include the variant ID only when the existing settings request it or the result explicitly reports no child variants; choose-variant entry links stay available.
+Version 0.2.1 additionally aligns the German order-help canonical, hreflang and footer link with the existing sitemap URL (without trailing slash). Product Offer URLs use the current variant canonical. Category item links include the variant ID only when the existing settings request it or the result reports exactly one saleable variant and no child variants; choose-variant entry links stay available.
 
 The product wrapper is copied from Ceres 5.0.84, commit `5d5783f608fe41a5eb6abb3718c642502699fccf` (PlentyONE GmbH, AGPL-3.0). Its only behavior change is the Offer URL. Dependency versions are pinned for this test.
 
