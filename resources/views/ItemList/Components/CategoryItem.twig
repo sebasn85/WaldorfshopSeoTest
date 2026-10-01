@@ -1,4 +1,4 @@
-{{ Twig.set("buildUrlWithVariationId", "not ceresConfig.item.showPleaseSelect or webstoreConfig.attributeSelectDefaultOption == 0 or item.data.filter.hasChildren is same as(false)") }}
+{{ Twig.set("buildUrlWithVariationId", "not ceresConfig.item.showPleaseSelect or webstoreConfig.attributeSelectDefaultOption == 0 or (item.data.item.salableVariationCount == 1 and item.data.filter.hasChildren is same as(false))") }}
 {{ Twig.set("itemURL", "item.data | itemURL(buildUrlWithVariationId)") }}
 {{ Twig.set("image", "item.data.images.all[0]") }}
 {{ Twig.if("item.data.images.variation[0] is not empty") }}
