@@ -1,0 +1,179 @@
+{% extends getPartial('page-design') %}
+{% import "Ceres::PageDesign.Macros.LayoutContainer" as LayoutContainer %}
+{% import "Ceres::PageDesign.Macros.ItemName" as ItemName %}
+
+{% block PartialHead %}
+
+    {% set itemData = item.documents[0].data %}
+
+    {% if forceRobotsValue is same as (false) and queryString() | length > 0 %}
+        {% set robotsValue = 'noindex' %}
+    {% else %}
+        {% set robotsValue = robots %}
+    {% endif %}
+
+    {% if itemData.texts.title is defined and itemData.texts.title | trim is not empty %}
+       {% set removeTitleCompanyName = true %}
+    {% endif %}
+
+    {% embed getPartial('page-metadata') %}
+        {% block title %}
+            {{ itemData.texts.title | default(ItemName.get(itemData | itemName(webstoreConfig.urlTitleItemName - 1, ""), itemData.variation.bundleType)) }}
+        {% endblock %}
+        {% block description    itemData.texts.metaDescription %}
+        {% block keywords       itemData.texts.keywords %}
+        {% block image          itemData.images.all[0].url %}
+        {% block robots         robotsValue %}
+        {% block schemaOrg %}
+            {
+                "@context"      : "https://schema.org/",
+                "@type"         : "Product",
+                "@id"           : "{{ itemData.variation.id }}",
+                "name"          : "{{ ItemName.get(itemData | itemName, itemData.variation.bundleType) | trim }}",
+                "category"      : "{{ defaultCategory.details[0].name }}",
+                "releaseDate"   : "{{ itemData.variation.releasedAt }}",
+                "image"         : "{{ imageSeo }}",
+                "identifier"    : "{{ itemData.variation.id }}",
+                "description"   : "{{ itemData.texts.description | striptags | filterTabs }}",
+                "disambiguatingDescription" : "{{ itemData.texts.shortDescription }}",
+{% if manufacturer | length > 0 %}
+                "manufacturer"  : {
+                    "@type"         : "Organization",
+                    "name"          : "{{ manufacturer }}"
+                },
+{%  endif %}
+{% if brand | length  > 0 %}
+                "brand"         : {
+                    "@type"         : "Brand",
+                    "name"          : "{{ brand }}"
+                },
+{% endif %}
+{% if sku | length  > 0 %}
+                "sku"           : "{{ sku }}",
+{% endif %}
+{% if gtin | length  > 0 %}
+                "gtin"          : "{{ gtin }}",
+{% endif %}
+{% if gtin8 | length  > 0 %}
+                "gtin8"         : "{{ gtin8 }}",
+{% endif %}
+{% if gtin13 | length  > 0 %}
+                "gtin13"        : "{{ gtin13 }}",
+{% endif %}
+{% if isbn | length  > 0 %}
+                "isbn"          : "{{ isbn }}",
+{% endif %}
+{% if mpn | length  > 0 %}
+                "mpn"           : "{{ mpn }}",
+{% endif %}
+                "offers": {
+                    "@type"         : "Offer",
+                    "priceCurrency" : "{{ itemData.prices.default.currency }}",
+                    "price"         : "{{ itemData.prices.default.price.value | number_format(2, '.', '') }}",
+{% if priceValidUntil | length  > 0 %}
+                    "priceValidUntil": "{{ priceValidUntil }}",
+{% endif %}
+                    "url"           : {{ services.url.getCanonicalURL() | default(requestedVariationUrl, true) | json_encode | raw }},
+                    "priceSpecification":[
+                        {% if itemData.prices.rrp %}
+                            {
+                                "@type": "UnitPriceSpecification",
+                                "price": "{{ itemData.prices.rrp.price.value | number_format(2, '.', '') }}",
+                                "priceCurrency": "{{ item.documents[0].data.prices.rrp.currency }}",
+                                "priceType": "ListPrice",
+                                "referenceQuantity": {
+                                    "@type": "QuantitativeValue",
+                                    "value": "{{ itemData.unit.content }}",
+                                    "unitCode": "{{ itemData.unit.unitOfMeasurement }}"
+                                }
+                            },
+                        {% endif %}
+                        {
+                            "@type": "UnitPriceSpecification",
+                            "price": "{{ itemData.prices.default.price.value | number_format(2, '.', '') }}",
+                            "priceCurrency": "{{ item.documents[0].data.prices.default.currency }}",
+                            "priceType": "SalePrice",
+                            "referenceQuantity": {
+                                "@type": "QuantitativeValue",
+                                "value": "{{ itemData.unit.content }}",
+                                "unitCode": "{{ itemData.unit.unitOfMeasurement }}"
+                            }
+                        }
+
+                    ],
+                    "availability"  : "{{ itemData.variation.availability.mappedAvailability }}",
+                    "itemCondition" : "{{ conditionOfItem }}"
+                },
+                "depth": {
+                    "@type"         : "QuantitativeValue",
+                    "value"         : "{{ itemData.variation.lengthMM }}"
+                },
+                "width": {
+                    "@type"         : "QuantitativeValue",
+                    "value"         : "{{ itemData.variation.widthMM }}"
+                },
+                "height": {
+                    "@type"         : "QuantitativeValue",
+                    "value"         : "{{ itemData.variation.heightMM }}"
+                },
+                "weight": {
+                    "@type"         : "QuantitativeValue",
+                    "value"         : "{{ itemData.variation.weightG }}"
+                }
+            }
+        {% endblock %}
+    {% endembed %}
+{% endblock %}
+
+{% block PageBody %}
+    {{ set_item_data_base(item.documents[0].data) }}
+
+    {% set shopBuilderTemplate = "" %}
+    {% set currentCategory = services.category.getCurrentCategory() %}
+
+    {% if currentCategory is defined %}
+        {% set shopBuilderTemplate = shop_builder_category_template(currentCategory.id, isItemSet ? "itemset" : "singleitem") %}
+    {% endif %}
+
+    {% if item.documents[0].data.item.add_cms_page > 0 and not isShopBuilder %}
+        {# Item template is configured for the item #}
+        {% set template %}
+            {% include [category_template( item.documents[0].data.item.add_cms_page, lang, webstoreConfig.webstoreId ), "Ceres::Item.SingleItemView"] %}
+        {% endset %}
+
+        {% if template | trim is not empty %}
+            {{ template }}
+        {% else %}
+            {% include "Ceres::Item.SingleItemView" %}
+        {% endif %}
+
+    {% elseif shopBuilderTemplate | trim is not empty or isShopBuilder %}
+        {# Shopbuilder template #}
+        <div class="single container-max page-content">
+            <div class="row">
+                <div class="col">
+                    <single-item
+                        v-cloak
+                        item-data="{{ item | json_data }}"
+                        attributes-data="{{ attributes | json_data }}"
+                        variations="{{ variations | json_data }}"
+                        :after-key="{{ afterKey | json_encode }}"
+                        :please-select-option-variation-id="{{ dynamicVariationId }}"
+                        :init-please-select-option="{{ initPleaseSelectOption | json_encode }}"
+                        :show-net-prices="{{ services.customer.showNetPrices() | json_encode }}"
+                        :is-wish-list-enabled="{{ services.url.isRouteEnabled("wish-list") | json_encode }}"
+                        :item-id="{{ item.documents[0].data.item.id }}"
+                        v-slot="slotProps">
+                        {{ shopBuilderTemplate | raw }}
+                    </single-item>
+                </div>
+            </div>
+        </div>
+    {% elseif shop_builder_category_template_exists() %}
+        {# Empty shop builder template is loading #}
+    {% else %}
+        {# No item template defined in ShopBuilder => use default template from plugin #}
+        {% include "Ceres::Item.SingleItemView" %}
+    {% endif %}
+
+{% endblock %}
