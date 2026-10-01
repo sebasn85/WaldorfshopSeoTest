@@ -17,6 +17,18 @@
 {% set canonicalUrl = t08CanonicalAliases[canonicalUrl] | default(canonicalUrl) %}
 {% set canonicalQueryString = services.url.getCanonicalQueryString() %}
 
+{# T11: IO has no canonical fallback for the Blog plugin's routes.
+   Restrict the fallback to the existing German /blog area and skip 404 pages.
+   Preserve content query parameters using IO's existing query normalization. #}
+{% set t11BlogPath = request.getRequestUri() | split('?') | first %}
+{% set t11IsBlogPath = t11BlogPath == '/blog' or t11BlogPath starts with '/blog/' %}
+{% if canonicalUrl is empty and t11IsBlogPath and services.template.getCurrentTemplate() != 'tpl.page-not-found' %}
+    {% set canonicalUrl = 'https://www.waldorfshop.eu/' ~ (t11BlogPath | trim('/')) %}
+    {% if canonicalQueryString == '?page=1' %}
+        {% set canonicalQueryString = '' %}
+    {% endif %}
+{% endif %}
+
 {# T08: Only the unfiltered first category page duplicates the base URL.
    Keep page 2+, filters and explicitly forced canonical URLs unchanged. #}
 {% if services.template.isCategory() and canonicalQueryString == '?page=1' %}
