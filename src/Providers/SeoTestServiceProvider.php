@@ -13,6 +13,14 @@ class SeoTestServiceProvider extends TemplateServiceProvider
     public function boot()
     {
         $this->overrideTemplate(
+            'Ceres::PageDesign.Partials.PageMetadata',
+            'WaldorfshopSeoTest::PageDesign.Partials.PageMetadata'
+        );
+        $this->overrideTemplate(
+            'Ceres::Homepage.Homepage',
+            'WaldorfshopSeoTest::Homepage.Homepage'
+        );
+        $this->overrideTemplate(
             'Ceres::PageDesign.Partials.Head',
             'WaldorfshopSeoTest::PageDesign.Partials.Head'
         );
