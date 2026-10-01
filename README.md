@@ -31,3 +31,5 @@ There are no new routes, database migrations, background jobs, scripts or global
 
 Prepared for preview validation. No live rollout or completed T08 audit is implied.
 Scope is the theme-rendered category links, Offer URLs and German order-help URL. Variant-selection links are intentional exceptions. Dynamic components outside these templates need separate checks before a complete site-wide claim.
+
+Version 0.2.2 also normalizes the exact Bestellhilfe alias in the copied TopBar language picker, retaining the existing query string. Regenerate ShopBuilder contents in test set 426 after deployment.
