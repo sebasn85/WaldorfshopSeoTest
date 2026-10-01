@@ -2,7 +2,7 @@
     "name": "WaldorfshopSeoTest",
     "namespace": "WaldorfshopSeoTest",
     "type": "theme",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "license": "AGPL-3.0",
     "isClosedSource": false,
     "description": "Isolated T08 canonical test. Install only in the unlinked test plugin set.",
@@ -10,8 +10,8 @@
     "authorIcon": "icon_author_xs.png",
     "pluginIcon": "icon_plugin_xs.png",
     "require": {
-        "Ceres": "~5.0.0",
-        "IO": "~5.0.0",
+        "Ceres": "5.0.84",
+        "IO": "5.0.83",
         "Waldorfshop7": "5.0.74"
     },
     "serviceProvider": "WaldorfshopSeoTest\\Providers\\SeoTestServiceProvider"
