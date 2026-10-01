@@ -7,6 +7,10 @@ Original plugin metadata identifies Universnatur GmbH as author and AGPL-3.0 as 
 
 ## Scope
 
+Version 0.2.0 additionally aligns the German order-help canonical, hreflang and footer link with the existing sitemap URL (without trailing slash). Product Offer URLs use the current variant canonical. Category item links include the variant ID only when the existing settings request it or the result explicitly reports no child variants; choose-variant entry links stay available.
+
+The product wrapper is copied from Ceres 5.0.84, commit `5d5783f608fe41a5eb6abb3718c642502699fccf` (PlentyONE GmbH, AGPL-3.0). Its only behavior change is the Offer URL. Dependency versions are pinned for this test.
+
 Only an unfiltered category canonical query equal to `?page=1` is removed.
 Page 2+, filters and explicitly forced canonical URLs retain their original handling.
 The existing Waldorfshop7 theme, assets, settings and widgets remain in use.
@@ -26,4 +30,4 @@ There are no new routes, database migrations, background jobs, scripts or global
 ## Status
 
 Prepared for preview validation. No live rollout or completed T08 audit is implied.
-The full T08 work also includes product links/offers URLs and help-page sitemap URLs.
+Scope is the theme-rendered category links, Offer URLs and German order-help URL. Variant-selection links are intentional exceptions. Dynamic components outside these templates need separate checks before a complete site-wide claim.
