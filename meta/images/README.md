@@ -1,0 +1,1 @@
+Plugin icons copied from waldorfweb/pp-waldorfshop-07, mobileChanges, commit 5dc0deda2a6911f465ded4d5eec2d1f1302bc99b. Original plugin author: Universnatur GmbH. License stated in upstream plugin.json: AGPL-3.0.
