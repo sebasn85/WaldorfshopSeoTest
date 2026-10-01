@@ -20,5 +20,21 @@ class SeoTestServiceProvider extends TemplateServiceProvider
             'Waldorfshop7::PageDesign.Partials.Head',
             'WaldorfshopSeoTest::PageDesign.Partials.Head'
         );
+        $this->overrideTemplate(
+            'Ceres::PageDesign.Partials.Footer',
+            'WaldorfshopSeoTest::PageDesign.Partials.Footer'
+        );
+        $this->overrideTemplate(
+            'Waldorfshop7::PageDesign.Partials.Footer',
+            'WaldorfshopSeoTest::PageDesign.Partials.Footer'
+        );
+        $this->overrideTemplate(
+            'Waldorfshop7::ItemList.Components.CategoryItem',
+            'WaldorfshopSeoTest::ItemList.Components.CategoryItem'
+        );
+        $this->overrideTemplate(
+            'Ceres::Item.SingleItemWrapper',
+            'WaldorfshopSeoTest::Item.SingleItemWrapper'
+        );
     }
 }
