@@ -1,0 +1,203 @@
+{{ Twig.set("buildUrlWithVariationId", "not ceresConfig.item.showPleaseSelect or webstoreConfig.attributeSelectDefaultOption == 0 or item.data.filter.hasChildren is same as(false)") }}
+{{ Twig.set("itemURL", "item.data | itemURL(buildUrlWithVariationId)") }}
+{{ Twig.set("image", "item.data.images.all[0]") }}
+{{ Twig.if("item.data.images.variation[0] is not empty") }}
+    {{ Twig.set("image", "item.data.images.variation[0]") }}
+{{ Twig.endif() }}
+{#{{ Twig.set("imageURL", "image.urlMiddle | replace({'https://cdn02.plentymarkets.com/rm2ukznxe8l9/': 'https://waldorfshop.sirv.com/', '/middle/' : '/full/'}) ~ '?scale.width=270&scale.height=270'") }}#}
+{{ Twig.set("imageURL", "image.urlMiddle ~ '.avif'") }}
+{{ Twig.set("hasChildren", "'false'") }}
+{{ Twig.if("item.data.item.salableVariationCount > 1 and not showAllVariationsOfItemId") }}
+    {{ Twig.set("hasChildren", "'true'") }}
+{{ Twig.endif() }}
+{{ Twig.set("graduatedPrice", "item.data.prices.default.unitPrice.formatted") }}
+{{ Twig.if("ceresConfig.item.enableGraduatedPrices") }}
+    {{ Twig.if("item.data.prices.graduatedPrices.length > 0") }}
+        {{ Twig.set("graduatedPrice", "item.data.prices.graduatedPrices[0].unitPrice.formatted") }}
+    {{ Twig.endif() }}
+{{ Twig.endif() }}
+{{ Twig.set("listCategoryIds", "config('Waldorfshop7.config.ListCategory') | replace({' ': ''}) | split(',')") }}
+{{ Twig.set("currentCategoryId", "''") }}
+{{ Twig.set("isListCategory", "'false'") }}
+{{ Twig.if("services.category.getCurrentCategory()") }}
+    {{ Twig.set("currentCategoryId", "services.category.getCurrentCategory().id ~ ''") }}
+{{ Twig.endif() }}
+{{ Twig.if("currentCategoryId is not empty and currentCategoryId in listCategoryIds") }}
+    {{ Twig.set("isListCategory", "'true'") }}
+{{ Twig.endif() }}
+{{ Twig.import("LayoutContainer", "Ceres::PageDesign.Macros.LayoutContainer") }}
+
+<article class="cmp cmp-product-thumb">
+    <div>
+
+
+        <div class="thumb-image">
+            <a class="prop-1-1 d-block" href="{{ Twig.print( 'itemURL') }}" title="{{ Twig.print("item.data | itemName") }}">
+                {{ Twig.if("loadDirectly") }}
+                    {{ Twig.print("add_asset(imageURL,'image')") }}
+                {{ Twig.endif() }}
+                <img
+                    class="mw-100 mh-100 position-absolute"
+                    src="{{ Twig.print( 'imageURL') }}"
+                    alt="{{ Twig.print("item.data | itemName") }}"
+                    {{ Twig.if("loadDirectly") }}
+                        fetchpriority="high"
+                    {{ Twig.else() }}
+                        loading="lazy"
+                        decoding="async"
+                    {{ Twig.endif() }}
+                >
+            </a>
+        </div>
+
+{#        <!-- STORE SPECIALS -->#}
+        {{ Twig.if("item.data.item.storeSpecial or ((item.data.prices.rrp.price.value - item.data.prices.default.unitPrice.value) >= 0.01) or item.data.variation.bundleType is same as('bundle') or item.data.item.itemType is same as('set')") }}
+            <div class="special-tags p-2">
+            {{ Twig.if("(item.data.prices.rrp.price.value - item.data.prices.default.unitPrice.value) >= 0.01") }}
+                {{ Twig.set("percentage", "-100 * (1 - (item.data.prices.default.unitPrice.value / item.data.prices.rrp.price.value))") }}
+                {{ Twig.if("percentage <= -1") }}
+                    <span class="badge badge-offer badge-secondary">{{ Twig.print("(percentage | round(ceresConfig.item.storeSpecial | default(0))) ~ ' %'") }}</span>
+                {{ Twig.endif() }}
+            {{ Twig.elseif("item.data.item.storeSpecial") }}
+                {{ Twig.if("item.data.item.storeSpecial.id is same as(1)") }}
+                    <span class="badge badge-offer badge-secondary">{{ trans("Ceres::Template.storeSpecialOffer") }}</span>
+                {{ Twig.elseif("item.data.item.storeSpecial.id is same as(2)") }}
+                    <span class="badge badge-new badge-secondary">{{ trans("Ceres::Template.storeSpecialNew") }}</span>
+                {{ Twig.elseif("item.data.item.storeSpecial.id is same as(3)") }}
+                    <span class="bagde badge-top badge-secondary">{{ trans("Ceres::Template.storeSpecialTop") }}</span>
+                {{ Twig.endif() }}
+            {{ Twig.elseif("item.data.variation.bundleType is same as('bundle')") }}
+                <span class="badge badge-bundle bg-info">{{ trans("Ceres::Template.itemBundle") }}</span>
+            {{ Twig.elseif("item.data.item.itemType is same as('set')") }}
+                <span class="badge badge-dark">{{ trans("Ceres::Template.itemSet") }}</span>
+            {{ Twig.endif() }}
+            </div>
+        {{ Twig.endif() }}
+{#        <!-- ./STORE SPECIALS -->#}
+
+{#        <!-- ITEM DETAILS -->#}
+        <div class="thumb-content">
+            <div class="contentWrap">
+                <div class="upperContent">
+                    <a href="{{ Twig.print("itemURL") }}" class="thumb-title small stretched-link">{{ Twig.print("item.data | itemName") }}</a>
+
+                    <div class="item-details__book-details">
+
+                        {{ Twig.if("item.data.texts.name3 is not empty") }}
+                            <span class="item-details__subtitle">{{ Twig.print("item.data.texts.name3") }}</span>
+                        {{ Twig.endif() }}
+                        {{ Twig.if("item.data.texts.name2 is not empty and item.data.texts.name2 != 'N / A'") }}
+                            <span class="item-details__author">{{ Twig.print("item.data.texts.name2") }}</span>
+                        {{ Twig.endif() }}
+                        {{ Twig.if("item.data.texts.shortDescription is not empty") }}
+                        <span class="item-details__short">{{ Twig.print("item.data.texts.shortDescription") }}</span>
+                        {{ Twig.endif() }}
+
+                        
+                    </div>
+                </div>
+                
+
+                <div class="lowerContent">
+                    
+                    <div class="availabilityList w-100" >
+                        {{ Twig.if("item.data.variation.availability") }}
+                            <span class="availability badge availability-{{ Twig.print("item.data.variation.availability.id") }}">
+                                &nbsp;
+                            </span>
+                            {{ Twig.print("item.data.variation.availability.names.name") }}
+                        {{ Twig.endif() }}
+                    </div>
+
+                    <div class="thumb-meta mt-2">
+
+                        {{ Twig.print(Twig.call("LayoutContainer.show", ["Ceres::CategoryItem.BeforePrices", Twig.var("item.data")])) }}
+
+                        <div class="prices">
+                            {{ Twig.if("item.data.prices.rrp.price.value > 0 and (item.data.prices.rrp.price.value - item.data.prices.default.unitPrice.value) >= 0.01") }}
+                            <div class="price-view-port">
+                                {{ Twig.if("item.data.prices.specialOffer is not empty") }}
+                                <span class="crossprice">
+                                        {{ Twig.trans("Ceres::Template.crossPriceSpecialOffer", {"price": Twig.var("item.data.prices.default.unitPrice.formatted")}) }}
+                                    </span>
+                                {{ Twig.else() }}
+                                <span class="crossprice">
+                                        {{ Twig.trans("Ceres::Template.crossPriceRRP", {"price": Twig.var("item.data.prices.rrp.price.formatted")}) }}
+                                    </span>
+                                {{ Twig.endif() }}
+                            </div>
+                            {{ Twig.endif() }}
+
+                            <div class="price">
+                                {{ Twig.if("item.data.item.itemType == 'set'") }}
+                                    {{ Twig.trans("Ceres::Template.itemSetPrice", {"price": Twig.var("item.data.prices.default.price.formatted")}) }} {{ Twig.trans("Ceres::Template.itemFootnote") }}
+                                {{ Twig.elseif("item.data.item.salableVariationCount > 1 and ceresConfig.isCheapestSorting") }}
+                                    {{ Twig.trans("Ceres::Template.itemFromPrice", {"price": Twig.var("graduatedPrice")}) }} {{ Twig.trans("Ceres::Template.itemFootnote") }}
+                                {{ Twig.elseif("ceresConfig.item.enableGraduatedPrices and item.data.item.salableVariationCount is same as(1) and item.data.prices.graduatedPrices.length > 1") }}
+                                    {{ Twig.trans("Ceres::Template.itemFromPrice", {"price": Twig.var("graduatedPrice")}) }} {{ Twig.trans("Ceres::Template.itemFootnote") }}
+                                {{ Twig.else() }}
+                                    {{ Twig.if("item.data.prices.specialOffer is not empty") }}
+                                        {{ Twig.print("item.data.prices.specialOffer.unitPrice.formatted") }} {{ Twig.trans("Ceres::Template.itemFootnote") }}
+                                    {{ Twig.else() }}
+                                        {{ Twig.print("item.data.prices.default.unitPrice.formatted") }} {{ Twig.trans("Ceres::Template.itemFootnote") }}
+                                    {{ Twig.endif() }}
+                                {{ Twig.endif() }}
+                            </div>
+                        </div>
+                    </div>
+
+                    {{ Twig.print(Twig.call("LayoutContainer.show", ["Ceres::CategoryItem.AfterPrices", Twig.var("item.data")])) }}
+
+                    {{ Twig.if("not ((item.data.unit.unitOfMeasurement == 'C62') and (item.data.unit.content == 1))") }}
+                    <div class="category-unit-price small">
+                        <span>{{ Twig.print("item.data.unit.content")}}</span>
+                        <span> {{ Twig.print("item.data.unit.names.name") }}</span>
+                        {{ Twig.if("item.data.variation.mayShowUnitPrice") }}
+                            <span>&nbsp;| {{ Twig.print("item.data.prices.default.basePrice") }}</span>
+                        {{ Twig.endif() }}
+                    </div>
+                    {{ Twig.endif() }}
+
+                    <div class="vat small text-muted">
+                        * {{ Twig.if("services.customer.showNetPrices()") }}
+                            <span>{{ trans("Ceres::Template.itemExclVAT") }}</span>
+                        {{ Twig.else() }}
+                            <span>{{ trans("Ceres::Template.itemInclVAT") }}</span>
+                        {{ Twig.endif() }}
+                        {{ trans("Ceres::Template.itemExclusive") }}
+                        {{ Twig.if("ceresConfig.global.shippingCostsCategoryId > 0") }}
+                            <a data-toggle="modal" class="text-appearance" href="#shippingscosts" title="{{ trans('Ceres::Template.itemShippingCosts') }}">{{ trans('Ceres::Template.itemShippingCosts') }}</a>
+                        {{ Twig.else() }}
+                            <a title="{{ trans('Ceres::Template.itemShippingCosts') }}">{{ trans('Ceres::Template.itemShippingCosts') }}</a>
+                        {{ Twig.endif() }}
+                    </div>
+                
+
+                    <div>
+                        <intersect>
+                            <add-to-basket
+                                    data-testing="item-add-to-basket"
+                                    :variation-id="{{ Twig.print("item.data.variation.id") }}"
+                                    :is-salable="{{ Twig.print("item.data.filter.isSalable | json_encode") }}"
+                                    :has-children="{{ Twig.print("hasChildren") }}"
+                                    :interval-quantity="{{ Twig.print("item.data.variation.intervalOrderQuantity | default(1)") }}"
+                                    :minimum-quantity="{{ Twig.print("item.data.variation.minimumOrderQuantity") }}"
+                                    :maximum-quantity="{{ Twig.print("item.data.variation.maximumOrderQuantity | default('null')") }}"
+                                    :use-large-scale="false"
+                                    :show-quantity="{{ Twig.print("isListCategory") }}"
+                                    item-url="{{ Twig.print( 'itemURL') }}"
+                                    :has-price="true"
+                                    item-type="{{ Twig.print( 'item.data.item.itemType') }}">
+                            </add-to-basket>
+                            <template #loading><i></i></template>
+                        </intersect>
+                    </div>
+                </div>
+            </div>
+        </div>
+{#        <!-- ./ITEM DETAILS  -->#}
+    </div>
+
+
+
+</article>
