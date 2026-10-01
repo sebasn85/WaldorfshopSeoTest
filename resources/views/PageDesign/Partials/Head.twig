@@ -1,0 +1,66 @@
+{% import "Ceres::PageDesign.Macros.LayoutContainer" as LayoutContainer %}
+
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="generator" content="plentymarkets" />
+<meta name="format-detection" content="telephone=no"> {# avoid DOM manipulation by Safari #}
+
+{% set defaultFavicon = '/tpl/favicon_' ~ webstoreConfig.webstoreId ~ '.ico' %}
+<link rel="icon" type="image/x-icon" href="{{ webstoreConfig.faviconPath | default(ceresConfig.global.favicon) | default(defaultFavicon) }}">
+
+
+{% set canonicalUrl = services.url.getCanonicalURL() %}
+{% set languageUrls = services.url.getLanguageURLs() %}
+{% set canonicalQueryString = services.url.getCanonicalQueryString() %}
+
+{# T08: Only the unfiltered first category page duplicates the base URL.
+   Keep page 2+, filters and explicitly forced canonical URLs unchanged. #}
+{% if services.template.isCategory() and canonicalQueryString == '?page=1' %}
+    {% set canonicalQueryString = '' %}
+{% endif %}
+
+{% if forcedCanonicalUrl is defined and forcedCanonicalUrl is not empty %}
+    <link rel="canonical" href="{{ forcedCanonicalUrl }}">
+{% else %}
+    {% if canonicalUrl is not null %}
+        <link rel="canonical" href="{{ canonicalUrl ~ canonicalQueryString }}">
+    {% endif %}
+{% endif %}
+
+{# old: {% if services.url.isCanonical() or request.get('env') == "testing" %} #}
+{% if languageUrls is not empty or request.get('env') == "testing" %}
+    {% for language, url in languageUrls %}
+        <link rel="alternate" hreflang="{{language}}" href="{{url}}"/>
+    {% endfor %}
+{% endif %}
+
+{% set minSuffix = '.min' %}
+{% if ceresConfig.log.performanceLevel  == 'development' %}
+    {% set minSuffix = '' %}
+{% endif %}
+
+{% set defaultCSS = plugin_path("Waldorfshop7") ~ "/css/dia/" ~ assetName ~ minSuffix ~ ".css?v=" ~ buildHash %}
+{% set defaultSCSS = plugin_path("Waldorfshop7") ~ "/css/dia/" ~ assetName ~ ".scss?v=" ~ buildHash %}
+
+<link rel="preload" as="style" href="{{ defaultCSS }}">
+{% if LayoutContainer.show("Ceres::Template.StyleOverwrite") | trim is empty %}
+    <link rel="stylesheet" href="{{ defaultCSS }}"{% if isShopBuilder %} data-sass-root="{{ plugin_path('Waldorfshop7') }}" data-sass-original="{{ defaultSCSS }}"{% endif %}>
+{% endif %}
+
+{% if isShopBuilder %}
+    <link rel="stylesheet" href="{{ plugin_path("Waldorfshop7") }}/css/dia/ceres-shopbuilder.css?v={{ buildHash }}">
+{% endif %}
+
+<link rel="preload" as="image" href="{{ ceresConfig.header.companyLogo }}">
+
+{{ LayoutContainer.show("Ceres::Template.StyleOverwrite") }}
+
+<!-- Extend the existing style with a template -->
+{{ LayoutContainer.show("Ceres::Template.Style") }}
+
+{% if services.template.isItem() == "1"%}
+    <link rel="stylesheet" href="{{ plugin_path('Waldorfshop7') }}/css/dia/photoswipe.css">
+{% endif %}
+
+{{ get_shop_builder_styles() }}
