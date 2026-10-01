@@ -2,7 +2,7 @@
     "name": "WaldorfshopSeoTest",
     "namespace": "WaldorfshopSeoTest",
     "type": "theme",
-    "version": "0.2.1",
+    "version": "0.2.2",
     "license": "AGPL-3.0",
     "isClosedSource": false,
     "description": "Isolated T08 canonical test. Install only in the unlinked test plugin set.",
