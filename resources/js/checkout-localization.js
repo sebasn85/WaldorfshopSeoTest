@@ -21,7 +21,10 @@
                 Array.prototype.forEach.call(element.childNodes, function (node) {
                     if (node.nodeType !== 3) return;
                     var text = node.textContent.trim();
-                    var replacement = copy.replacements[text];
+                    var key = Object.keys(copy.replacements).find(function (candidate) {
+                        return candidate.toLocaleLowerCase() === text.toLocaleLowerCase();
+                    });
+                    var replacement = key && copy.replacements[key];
                     if (replacement) node.textContent = node.textContent.replace(text, replacement);
                 });
             });
