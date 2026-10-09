@@ -85,6 +85,8 @@
                 window.location.reload();
                 return;
             }
+            // Let Vue finish rendering the store changes before updating the current controls.
+            await new Promise(function (resolve) { window.requestAnimationFrame(resolve); });
             elements();
             panel.hidden = !state.enabled;
             checkbox.checked = state.selected === true;
