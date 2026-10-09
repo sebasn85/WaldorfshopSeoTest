@@ -17,16 +17,27 @@
             if (!token || !token.value) throw new Error(message('reload'));
             headers['X-CSRF-TOKEN'] = token.value;
         }
-        var response = await fetch(endpoint, {
-            method: method, credentials: 'same-origin', cache: 'no-store', headers: headers,
-            body: body ? JSON.stringify(body) : undefined
-        });
         var envelope;
-        try { envelope = await response.json(); }
-        catch (error) { throw new Error(message('save-failed')); }
+        if (method === 'POST' && window.jQuery && window.jQuery.ajax) {
+            // Ceres handles the response events through its global ajaxComplete listener.
+            // Await resumes after that listener has updated basket and checkout stores.
+            envelope = await new Promise(function (resolve, reject) {
+                window.jQuery.ajax({
+                    url: endpoint, method: method, headers: headers,
+                    contentType: 'application/json', dataType: 'json',
+                    data: JSON.stringify(body), cache: false
+                }).done(resolve).fail(function () { reject(new Error(message('save-failed'))); });
+            });
+        } else {
+            var response = await fetch(endpoint, {
+                method: method, credentials: 'same-origin', cache: 'no-store', headers: headers,
+                body: body ? JSON.stringify(body) : undefined
+            });
+            try { envelope = await response.json(); }
+            catch (error) { throw new Error(message('save-failed')); }
+            if (!response.ok) throw new Error(message('save-failed'));
+        }
         var data = envelope && envelope.data;
-        // Server errors may be German; show the translated recovery instruction.
-        if (!response.ok) throw new Error(message('save-failed'));
         if (!data || typeof data.enabled !== 'boolean') throw new Error(message('load-failed'));
         return data;
     }
@@ -57,9 +68,17 @@
         overlay.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:rgba(255,255,255,.9);display:flex;align-items:center;justify-content:center;padding:2rem;text-align:center';
         document.body.appendChild(overlay);
         try {
-            await request('POST', {selected: checkbox.checked, basketId: state.basketId});
-            // Reload preserves the preview URL and lets all payment components use the new server total.
-            window.location.reload();
+            state = await request('POST', {selected: checkbox.checked, basketId: state.basketId});
+            if (!window.jQuery || !window.jQuery.ajax) {
+                // Compatibility fallback when the normal Ceres event transport is unavailable.
+                window.location.reload();
+                return;
+            }
+            checkbox.checked = state.selected === true;
+            checkbox.disabled = !state.eligible;
+            status.textContent = state.selected ? message('selected') : '';
+            overlay.remove();
+            busy = false;
         } catch (error) {
             checkbox.checked = state.selected;
             status.textContent = error.message;
