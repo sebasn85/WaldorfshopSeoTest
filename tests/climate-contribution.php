@@ -108,6 +108,8 @@ namespace {
     $repo->basket->currency = 'EUR';
     $session->order = (object)['isNet'=>true];
     check($service->eligible($repo->basket), 'EUR net basket remains eligible for export shipping');
+    // A newly loaded basket starts with its own freshly calculated totals.
+    ($checkout->recalculate)();
     $result = $service->setSelected(true, 11);
     check($result['selected'], 'Export basket accepts explicit contribution');
     check(round($result['basket']['basketAmount'], 2) === 79.5, 'Export contribution adds exactly 50 cents');
