@@ -67,10 +67,25 @@ class ClimateContributionService
             // The shipping event takes gross fees, which Plenty converts to net.
             // Use the same maximum basket VAT rate as the shipping calculation.
             if ($order && $order->isNet && count($basketService->getTotalVats()) === 0) {
-                $fee *= 1 + max(0, $basketService->getMaxVatValue()) / 100;
+                $fee *= $this->netFeeFactor($basket);
             }
             $event->addAdditionalFee($fee);
         }
+    }
+
+    private function netFeeFactor($basket): float
+    {
+        // Export item VAT can become zero after a reload although the shipping
+        // calculator still removes the source VAT. Read its gross/net amounts.
+        if ($basket->shippingAmount > 0 && $basket->shippingAmountNet > 0) {
+            return $basket->shippingAmount / $basket->shippingAmountNet;
+        }
+        $consent = $this->session->getSessionValue(self::CONSENT_KEY);
+        if (is_array($consent) && (int)$consent['basketId'] === (int)$basket->id
+            && isset($consent['netFeeFactor'])) {
+            return (float)$consent['netFeeFactor'];
+        }
+        return 1 + max(0, pluginApp(BasketService::class)->getMaxVatValue()) / 100;
     }
 
     public function state(): array
@@ -101,10 +116,12 @@ class ClimateContributionService
 
         $previous = $this->session->getSessionValue(self::CONSENT_KEY);
         $before = pluginApp(BasketService::class)->getBasketForTemplate();
+        $netFeeFactor = $this->netFeeFactor($basket);
         $this->session->setSessionValue(self::CONSENT_KEY, [
             'basketId' => $basketId,
             'accepted' => $selected,
             'amount' => self::AMOUNT,
+            'netFeeFactor' => $netFeeFactor,
             'acceptedAt' => $selected ? time() : null,
             'textVersion' => '2026-10-09'
         ]);
@@ -114,6 +131,21 @@ class ClimateContributionService
             $after = $this->state();
             $expectedCents = $selected ? 50 : -50;
             $difference = (int)round(($after['basket']['basketAmount'] - $before['basketAmount']) * 100);
+            // Zero-cost shipping offers no initial gross/net ratio. Calibrate
+            // once from Plenty's actual result, then keep the exact-delta guard.
+            $order = $this->session->getOrder();
+            if ($selected && $difference > 0 && $difference < 50 && $order && $order->isNet
+                && count(pluginApp(BasketService::class)->getTotalVats()) === 0) {
+                $factor = $netFeeFactor * 50 / $difference;
+                if ($factor >= 1 && $factor <= 1.5) {
+                    $consent = $this->session->getSessionValue(self::CONSENT_KEY);
+                    $consent['netFeeFactor'] = $factor;
+                    $this->session->setSessionValue(self::CONSENT_KEY, $consent);
+                    $this->checkout->setShippingProfileId((int)$basket->shippingProfileId, true);
+                    $after = $this->state();
+                    $difference = (int)round(($after['basket']['basketAmount'] - $before['basketAmount']) * 100);
+                }
+            }
             if ($difference !== $expectedCents
                 || (int)round($after['basket']['itemSum'] * 100) !== (int)round($before['itemSum'] * 100)) {
                 throw new \RuntimeException('Der Versandbeitrag konnte nicht eindeutig berechnet werden. Bitte lade die Kasse neu.');
