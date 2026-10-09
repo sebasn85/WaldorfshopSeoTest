@@ -35,11 +35,11 @@ Scope is the theme-rendered category links, Offer URLs and German order-help URL
 Version 0.2.2 also normalizes the exact Bestellhilfe alias in the copied TopBar language picker, retaining the existing query string. Regenerate ShopBuilder contents in test set 426 after deployment.
 
 
-## Voluntary shipping contribution (0.5.0, climate branch)
+## Voluntary shipping contribution (0.5.1, climate branch)
 
 Branch `feature/klimaversand-50-cent` is intended for unlinked plugin set **428**, copied from live set 427. Do not merge into main or link set 428 to the live shop during validation. `climate.enabled` defaults to false.
 
-Enable only in the test set and apply the two default container links. The checkbox is initially unchecked and explicit acceptance is stored for the current basket only. The EUR 0.50 amount is fixed on the server. The contribution is added through Plenty's `AfterBasketChanged::setShippingCosts` and therefore is included in shipping costs, VAT and payment total; it does not add a product or increase `itemSum`. In the order/invoice it is included in the shipping-cost position, **not a separate contribution position**. A separate invoice line requires a further accounting integration. No DHL/GoGreen contract or label settings are changed by this plugin.
+Enable only in the test set and apply the two default container links. The checkbox is initially unchecked and explicit acceptance is stored for the current basket only. The EUR 0.50 amount is fixed on the server. The contribution is added through Plenty's `AfterShippingCostCalculated::addAdditionalFee` and therefore is included in shipping costs, VAT and payment total; it does not add a product or increase `itemSum`. In the order/invoice it is included in the shipping-cost position, **not a separate contribution position**. A separate invoice line requires a further accounting integration. No DHL/GoGreen contract or label settings are changed by this plugin.
 
 Initial scope: baskets in EUR with gross-price display. CHF and net-price baskets are ineligible. Changes trigger full checkout reload so payment components receive the updated total. Every toggle verifies an exact 50-cent change and unchanged merchandise value; otherwise it restores the old consent and recalculates. The fee is recalculated from base shipping costs, not accumulated from the old total.
 
