@@ -3,15 +3,22 @@ namespace WaldorfshopSeoTest\Providers;
 
 use Plenty\Modules\Webshop\Template\Providers\TemplateServiceProvider;
 
-/** Isolated template copy for testing; no routes, migrations or global settings. */
+/** Template overrides and optional, plugin-set-scoped shipping contribution. */
 class SeoTestServiceProvider extends TemplateServiceProvider
 {
     public function register()
     {
+        $this->getApplication()->register(ClimateRouteServiceProvider::class);
     }
 
     public function boot()
     {
+        pluginApp(\Plenty\Plugin\Events\Dispatcher::class)->listen(
+            \Plenty\Modules\Basket\Events\Basket\AfterBasketChanged::class,
+            function ($event) {
+                pluginApp(\WaldorfshopSeoTest\Services\ClimateContributionService::class)->apply($event);
+            }
+        );
         $this->overrideTemplate(
             'Ceres::PageDesign.Partials.PageMetadata',
             'WaldorfshopSeoTest::PageDesign.Partials.PageMetadata'
