@@ -35,7 +35,7 @@ Scope is the theme-rendered category links, Offer URLs and German order-help URL
 Version 0.2.2 also normalizes the exact Bestellhilfe alias in the copied TopBar language picker, retaining the existing query string. Regenerate ShopBuilder contents in test set 426 after deployment.
 
 
-## Voluntary shipping contribution (0.5.2, climate branch)
+## Voluntary shipping contribution (0.5.3, climate branch)
 
 Branch `feature/klimaversand-50-cent` is intended for unlinked plugin set **428**, copied from live set 427. Do not merge into main or link set 428 to the live shop during validation. `climate.enabled` defaults to false.
 
@@ -56,3 +56,5 @@ Initial scope: baskets in EUR with gross-price display. CHF and net-price basket
 The development checks do not substitute for these preview and accounting checks. Rollback: disable climate.enabled in set 428 and rebuild that set, or restore plugin branch main in set 428.
 
 Checkout contribution copy, accessibility labels, and status/recovery messages use the active shop language through Plenty translations. Version 0.5.2 includes German, English, French, Italian, Spanish and Dutch. Server failures show a translated recovery instruction instead of exposing German API errors.
+
+Version 0.5.3 registers the translation section and includes server-rendered defaults for translation caches that return untranslated keys.
