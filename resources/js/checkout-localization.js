@@ -11,6 +11,8 @@
         var scheduled = false;
         function translate() {
             scheduled = false;
+            root = document.querySelector('.page-content.checkout');
+            if (!root) return;
             root.querySelectorAll('small.d-block.mb-3').forEach(function (element) {
                 if (element.textContent.trim().indexOf('Als Kund:in von Waldorfshop') === 0) {
                     element.textContent = copy.marketing;
@@ -37,7 +39,7 @@
         translate();
         new MutationObserver(function () {
             if (!scheduled) { scheduled = true; window.requestAnimationFrame(translate); }
-        }).observe(root, {childList: true, subtree: true, characterData: true});
+        }).observe(document.body, {childList: true, subtree: true, characterData: true});
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, {once: true});
     else init();
