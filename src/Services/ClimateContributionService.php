@@ -38,11 +38,9 @@ class ClimateContributionService
 
     public function eligible($basket): bool
     {
-        $order = $this->session->getOrder();
         return $this->enabled() && $basket && $basket->id > 0
             && $basket->currency === 'EUR' && !$basket->orderId
-            && count($basket->basketItems) > 0
-            && (!$order || !$order->isNet);
+            && count($basket->basketItems) > 0;
     }
 
     public function selected($basket): bool
