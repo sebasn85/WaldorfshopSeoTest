@@ -74,7 +74,7 @@
     "climateUpdating": "Your order total is being updated …"
   }
 } %}
-{% set climateCopy = climateDefaults[climateLanguage] | default(climateDefaults.en) %}
+{% set climateCopy = climateDefaults[climateLanguage] | default(climateDefaults.de) %}
 <section class="ws-climate-contribution card card-body mb-3" data-ws-climate hidden
     aria-label="{{ (trans('WaldorfshopSeoTest::Template.climateTitle') == 'WaldorfshopSeoTest::Template.climateTitle' ? climateCopy.climateTitle : trans('WaldorfshopSeoTest::Template.climateTitle')) | escape('html_attr') }}"
     data-ws-climate-reload="{{ (trans('WaldorfshopSeoTest::Template.climateReload') == 'WaldorfshopSeoTest::Template.climateReload' ? climateCopy.climateReload : trans('WaldorfshopSeoTest::Template.climateReload')) | escape('html_attr') }}"
