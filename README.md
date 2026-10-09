@@ -14,12 +14,12 @@ The product wrapper is copied from Ceres 5.0.84, commit `5d5783f608fe41a5eb6abb3
 Only an unfiltered category canonical query equal to `?page=1` is removed.
 Page 2+, filters and explicitly forced canonical URLs retain their original handling.
 The existing Waldorfshop7 theme, assets, settings and widgets remain in use.
-There are no new routes, database migrations, background jobs, scripts or global settings.
+The climate branch adds opt-in API routes and a checkout script; it adds no database migrations or global settings.
 
 ## Installation boundaries
 
 - This is a separate plugin and repository, not an update to Waldorfshop7.
-- Install and deploy only in the unlinked test set 426.
+- For the climate branch, install and deploy only in the unlinked test set 428.
 - Never change the repository connection for plugin 92.
 - Never assign this plugin or test set to the live shop without separate approval.
 - Start with priority 981, above the existing theme (980), below IO (999).
@@ -33,3 +33,24 @@ Prepared for preview validation. No live rollout or completed T08 audit is impli
 Scope is the theme-rendered category links, Offer URLs and German order-help URL. Variant-selection links are intentional exceptions. Dynamic components outside these templates need separate checks before a complete site-wide claim.
 
 Version 0.2.2 also normalizes the exact Bestellhilfe alias in the copied TopBar language picker, retaining the existing query string. Regenerate ShopBuilder contents in test set 426 after deployment.
+
+
+## Voluntary shipping contribution (0.5.0, climate branch)
+
+Branch `feature/klimaversand-50-cent` is intended for unlinked plugin set **428**, copied from live set 427. Do not merge into main or link set 428 to the live shop during validation. `climate.enabled` defaults to false.
+
+Enable only in the test set and apply the two default container links. The checkbox is initially unchecked and explicit acceptance is stored for the current basket only. The EUR 0.50 amount is fixed on the server. The contribution is added through Plenty's `AfterBasketChanged::setShippingCosts` and therefore is included in shipping costs, VAT and payment total; it does not add a product or increase `itemSum`. In the order/invoice it is included in the shipping-cost position, **not a separate contribution position**. A separate invoice line requires a further accounting integration. No DHL/GoGreen contract or label settings are changed by this plugin.
+
+Initial scope: baskets in EUR with gross-price display. CHF and net-price baskets are ineligible. Changes trigger full checkout reload so payment components receive the updated total. Every toggle verifies an exact 50-cent change and unchanged merchandise value; otherwise it restores the old consent and recalculates. The fee is recalculated from base shipping costs, not accumulated from the old total.
+
+### Required preview checks before release
+
+- Initial checkout unchecked; total unchanged. Select once: gross total +0.50, merchandise value unchanged. Deselect: original total restored.
+- Repeated toggles and reload: no duplicate fee. Quantity, address, shipping and payment changes retain a single fee.
+- Merchandise just below/above every shipping threshold: contribution does not change shipping eligibility.
+- Shipping discount/coupon, mixed VAT and VAT-free export: exact delta and VAT must be checked in the real backend. Any unsupported case must fail closed.
+- Empty basket/new basket/new order: old consent does not carry over. EUR/net and CHF changes disable the option.
+- Mobile and desktop: checkbox readable and reachable by keyboard; no order submission while updating.
+- Sandbox order/payment and invoice: identical confirmed amount, contribution included in shipping position. This final check requires a sandbox payment method; no real purchase is authorized.
+
+The development checks do not substitute for these preview and accounting checks. Rollback: disable climate.enabled in set 428 and rebuild that set, or restore plugin branch main in set 428.

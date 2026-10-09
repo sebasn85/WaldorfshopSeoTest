@@ -1,0 +1,18 @@
+{
+    "formatVersion": 1,
+    "menu": {
+        "Config.climateTab": {
+            "label": "Config.climateTab",
+            "formFields": {
+                "climate.enabled": {
+                    "type": "checkBox",
+                    "required": false,
+                    "label": "Config.climateEnabled",
+                    "options": {
+                        "defaultValue": "false"
+                    }
+                }
+            }
+        }
+    }
+}

@@ -2,10 +2,10 @@
     "name": "WaldorfshopSeoTest",
     "namespace": "WaldorfshopSeoTest",
     "type": "theme",
-    "version": "0.4.0",
+    "version": "0.5.0",
     "license": "AGPL-3.0",
     "isClosedSource": false,
-    "description": "Isolated SEO and release corrections. Deploy only in test plugin set 426.",
+    "description": "SEO templates and optional EUR 0.50 shipping contribution. Climate branch for unlinked test plugin set 428.",
     "author": "Universnatur GmbH",
     "authorIcon": "icon_author_xs.png",
     "pluginIcon": "icon_plugin_xs.png",
@@ -14,5 +14,19 @@
         "IO": "5.0.83",
         "Waldorfshop7": "5.0.74"
     },
-    "serviceProvider": "WaldorfshopSeoTest\\Providers\\SeoTestServiceProvider"
+    "serviceProvider": "WaldorfshopSeoTest\\Providers\\SeoTestServiceProvider",
+    "dataProviders": [
+        {
+            "key": "WaldorfshopSeoTest\\Providers\\ClimateContributionProvider",
+            "name": "Freiwilliger Versandbeitrag (0,50 EUR)",
+            "description": "Opt-in vor der Bestellsumme.",
+            "defaultLayoutContainer": "Ceres::Checkout.BeforeBasketTotals"
+        },
+        {
+            "key": "WaldorfshopSeoTest\\Providers\\ClimateScriptProvider",
+            "name": "Versandbeitrag: Checkout-Skript",
+            "description": "Synchronisiert den freiwilligen Beitrag mit der serverseitigen Berechnung.",
+            "defaultLayoutContainer": "Ceres::Checkout.AfterScriptsLoaded"
+        }
+    ]
 }
