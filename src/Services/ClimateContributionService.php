@@ -60,7 +60,16 @@ class ClimateContributionService
         }
         $basket = $this->baskets->load();
         if ($this->selected($basket)) {
-            $event->addAdditionalFee(self::AMOUNT);
+            $fee = self::AMOUNT;
+            $order = $this->session->getOrder();
+            $basketService = pluginApp(BasketService::class);
+            // IO displays net totals only for net orders without collected VAT.
+            // The shipping event takes gross fees, which Plenty converts to net.
+            // Use the same maximum basket VAT rate as the shipping calculation.
+            if ($order && $order->isNet && count($basketService->getTotalVats()) === 0) {
+                $fee *= 1 + max(0, $basketService->getMaxVatValue()) / 100;
+            }
+            $event->addAdditionalFee($fee);
         }
     }
 
