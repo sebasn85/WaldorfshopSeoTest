@@ -14,7 +14,7 @@ class SeoTestServiceProvider extends TemplateServiceProvider
     public function boot()
     {
         pluginApp(\Plenty\Plugin\Events\Dispatcher::class)->listen(
-            \Plenty\Modules\Basket\Events\Basket\AfterBasketChanged::class,
+            \Plenty\Modules\Order\Shipping\Events\AfterShippingCostCalculated::class,
             function ($event) {
                 pluginApp(\WaldorfshopSeoTest\Services\ClimateContributionService::class)->apply($event);
             }
