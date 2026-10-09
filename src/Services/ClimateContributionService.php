@@ -3,7 +3,7 @@ namespace WaldorfshopSeoTest\Services;
 
 use IO\Services\BasketService;
 use Plenty\Modules\Basket\Contracts\BasketRepositoryContract;
-use Plenty\Modules\Basket\Events\Basket\AfterBasketChanged;
+use Plenty\Modules\Order\Shipping\Events\AfterShippingCostCalculated;
 use Plenty\Modules\Frontend\Contracts\Checkout;
 use Plenty\Modules\Webshop\Contracts\SessionStorageRepositoryContract;
 use Plenty\Plugin\ConfigRepository;
@@ -53,23 +53,25 @@ class ClimateContributionService
             && $consent['accepted'] === true;
     }
 
-    public function apply(AfterBasketChanged $event)
+    public function apply(AfterShippingCostCalculated $event)
     {
-        $basket = $event->getBasket();
-        if (!$this->eligible($basket)) {
-            $this->session->setSessionValue(self::CONSENT_KEY, null);
+        // This hook contributes a fee to the actual shipping-cost calculation.
+        // Shipment/backend recalculations of existing orders must not use basket consent.
+        if ($event->getOrderId() > 0) {
             return;
         }
+        $basket = $this->baskets->load();
         if ($this->selected($basket)) {
-            // AfterBasketChanged supplies freshly calculated base shipping costs.
-            // Never add a fee to the previously persisted shippingAmount.
-            $event->setShippingCosts(round($event->getShippingCosts() + self::AMOUNT, 2));
+            $event->addAdditionalFee(self::AMOUNT);
         }
     }
 
     public function state(): array
     {
         $basket = $this->baskets->load();
+        if (!$this->eligible($basket)) {
+            $this->session->setSessionValue(self::CONSENT_KEY, null);
+        }
         return [
             'enabled' => $this->enabled(),
             'eligible' => $this->eligible($basket),
