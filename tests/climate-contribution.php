@@ -41,10 +41,18 @@ namespace IO\Services {
     class BasketService {
         public $repo;
         public $maxVat = 19.0;
+        public $calculationVat = null;
         public $totalVats = [];
+        public $session;
         public function getMaxVatValue() { return $this->maxVat; }
         public function getTotalVats(): array { return $this->totalVats; }
-        public function getBasketForTemplate() { return (array)$this->repo->load(); }
+        public function getBasketForTemplate() {
+            $basket = (array)$this->repo->load();
+            if ($this->session->order && $this->session->order->isNet && count($this->totalVats) === 0) {
+                $basket['shippingAmount'] = $basket['shippingAmountNet'];
+            }
+            return $basket;
+        }
     }
 }
 namespace {
@@ -63,9 +71,10 @@ namespace {
     $config = new \Plenty\Plugin\ConfigRepository();
     $basketService = new \IO\Services\BasketService();
     $basketService->repo = $repo;
+    $basketService->session = $session;
     $GLOBALS['services'][\IO\Services\BasketService::class] = $basketService;
     $repo->basket = (object)['id'=>10,'currency'=>'EUR','orderId'=>0,'basketItems'=>[1],
-        'shippingProfileId'=>7,'itemSum'=>78.99,'shippingAmount'=>4.90,'basketAmount'=>83.89];
+        'shippingProfileId'=>7,'itemSum'=>78.99,'shippingAmount'=>4.90,'shippingAmountNet'=>4.90,'basketAmount'=>83.89];
     $service = new ClimateContributionService($session, $repo, $checkout, $config);
     $breakCalculation = false;
     $checkout->recalculate = function () use ($repo, $service, $session, $basketService, &$breakCalculation) {
@@ -73,11 +82,18 @@ namespace {
         $event = new AfterShippingCostCalculated('DHL', 0, $basket->shippingProfileId);
         $service->apply($event);
         $fee = $event->getAdditonalFee();
+        $base = ($basket->itemSum >= 79 ? 0 : 4.90);
         if ($session->order && $session->order->isNet && count($basketService->getTotalVats()) === 0) {
-            $fee /= 1 + $basketService->getMaxVatValue() / 100;
+            $factor = 1 + ($basketService->calculationVat ?? $basketService->maxVat) / 100;
+            $basket->shippingAmount = $base * $factor + $fee;
+            $basket->shippingAmountNet = round($basket->shippingAmount / $factor, 2);
+            $displayShipping = $basket->shippingAmountNet;
+        } else {
+            $basket->shippingAmount = round($base + $fee, 2);
+            $basket->shippingAmountNet = $basket->shippingAmount;
+            $displayShipping = $basket->shippingAmount;
         }
-        $basket->shippingAmount = round(($basket->itemSum >= 79 ? 0 : 4.90) + $fee, 2);
-        $basket->basketAmount = round($basket->itemSum + $basket->shippingAmount, 2)
+        $basket->basketAmount = round($basket->itemSum + $displayShipping, 2)
             + ($breakCalculation ? 1 : 0);
     };
     check(!$service->selected($repo->basket), 'Initial consent must be false');
@@ -125,8 +141,18 @@ namespace {
     ($checkout->recalculate)();
     check($service->selected($repo->basket), 'Export shipping-profile change preserves consent');
     check(round($repo->basket->basketAmount, 2) === 79.5, 'Export profile recalculation does not duplicate fee');
+    $basketService->calculationVat = 19.0;
+    $basketService->maxVat = 0.0;
+    ($checkout->recalculate)();
+    check(round($repo->basket->basketAmount, 2) === 79.5, 'Export reload keeps 50 cents when item VAT becomes zero');
     $service->setSelected(false, 11);
     check(round($repo->basket->basketAmount, 2) === 79.0, 'Export deselection restores the original total');
+    $session->setSessionValue(ClimateContributionService::CONSENT_KEY, null);
+    $result = $service->setSelected(true, 11);
+    check(round($result['basket']['basketAmount'], 2) === 79.5, 'Zero base shipping calibrates exact net contribution');
+    $service->setSelected(false, 11);
+    $session->setSessionValue(ClimateContributionService::CONSENT_KEY, null);
+    $basketService->calculationVat = null;
     $basketService->maxVat = 7.0;
     $result = $service->setSelected(true, 11);
     check(round($result['basket']['basketAmount'], 2) === 79.5, 'Reduced VAT export adds exactly 50 net cents');
