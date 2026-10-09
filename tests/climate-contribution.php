@@ -107,7 +107,16 @@ namespace {
     check(!$service->eligible($repo->basket), 'CHF ineligible');
     $repo->basket->currency = 'EUR';
     $session->order = (object)['isNet'=>true];
-    check(!$service->eligible($repo->basket), 'Net basket ineligible');
+    check($service->eligible($repo->basket), 'EUR net basket remains eligible for export shipping');
+    $result = $service->setSelected(true, 11);
+    check($result['selected'], 'Export basket accepts explicit contribution');
+    check(round($result['basket']['basketAmount'], 2) === 79.5, 'Export contribution adds exactly 50 cents');
+    $repo->basket->shippingProfileId = 44;
+    ($checkout->recalculate)();
+    check($service->selected($repo->basket), 'Export shipping-profile change preserves consent');
+    check(round($repo->basket->basketAmount, 2) === 79.5, 'Export profile recalculation does not duplicate fee');
+    $service->setSelected(false, 11);
+    check(round($repo->basket->basketAmount, 2) === 79.0, 'Export deselection restores the original total');
     $session->order = null;
     $repo->basket->basketItems = [];
     check(!$service->eligible($repo->basket), 'Empty basket ineligible');
