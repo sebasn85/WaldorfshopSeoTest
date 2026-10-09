@@ -4,7 +4,7 @@ namespace WaldorfshopSeoTest\Services;
 use IO\Services\BasketService;
 use Plenty\Modules\Basket\Contracts\BasketRepositoryContract;
 use Plenty\Modules\Basket\Events\Basket\AfterBasketChanged;
-use Plenty\Modules\Webshop\Contracts\CheckoutRepositoryContract;
+use Plenty\Modules\Frontend\Contracts\Checkout;
 use Plenty\Modules\Webshop\Contracts\SessionStorageRepositoryContract;
 use Plenty\Plugin\ConfigRepository;
 
@@ -22,7 +22,7 @@ class ClimateContributionService
     public function __construct(
         SessionStorageRepositoryContract $session,
         BasketRepositoryContract $baskets,
-        CheckoutRepositoryContract $checkout,
+        Checkout $checkout,
         ConfigRepository $config
     ) {
         $this->session = $session;
