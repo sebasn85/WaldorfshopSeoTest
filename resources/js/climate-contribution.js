@@ -5,12 +5,16 @@
     var state = null;
     var panel, checkbox, status;
 
+    function message(key) {
+        return panel.getAttribute('data-ws-climate-' + key) || '';
+    }
+
     async function request(method, body) {
         var headers = {Accept: 'application/json', 'Accept-Language': document.documentElement.lang || 'de'};
         if (body) {
             headers['Content-Type'] = 'application/json';
             var token = document.getElementById('csrf-token');
-            if (!token || !token.value) throw new Error('Bitte lade die Kasse neu.');
+            if (!token || !token.value) throw new Error(message('reload'));
             headers['X-CSRF-TOKEN'] = token.value;
         }
         var response = await fetch(endpoint, {
@@ -19,10 +23,11 @@
         });
         var envelope;
         try { envelope = await response.json(); }
-        catch (error) { throw new Error('Der Versandbeitrag konnte nicht gespeichert werden. Bitte lade die Kasse neu.'); }
+        catch (error) { throw new Error(message('save-failed')); }
         var data = envelope && envelope.data;
-        if (!response.ok) throw new Error((data && data.error) || 'Der Versandbeitrag konnte nicht gespeichert werden. Bitte lade die Kasse neu und versuche es erneut.');
-        if (!data || typeof data.enabled !== 'boolean') throw new Error('Der Versandbeitrag konnte nicht geladen werden. Bitte lade die Kasse neu.');
+        // Server errors may be German; show the translated recovery instruction.
+        if (!response.ok) throw new Error(message('save-failed'));
+        if (!data || typeof data.enabled !== 'boolean') throw new Error(message('load-failed'));
         return data;
     }
 
@@ -33,11 +38,11 @@
             panel.hidden = !state.enabled;
             checkbox.checked = state.selected === true;
             checkbox.disabled = !state.eligible;
-            status.textContent = state.selected ? 'Freiwilliger Versandbeitrag: 0,50 € ist in den Versandkosten enthalten.' :
-                (state.eligible ? '' : 'Der Beitrag ist aktuell nur für Warenkörbe in Euro mit Bruttopreisen verfügbar.');
+            status.textContent = state.selected ? message('selected') :
+                (state.eligible ? '' : message('ineligible'));
         } catch (error) {
             checkbox.disabled = true;
-            status.textContent = 'Der freiwillige Versandbeitrag konnte nicht geladen werden.';
+            status.textContent = message('load-failed');
         }
     }
 
@@ -45,10 +50,10 @@
         if (busy || !state || !state.eligible) return;
         busy = true;
         checkbox.disabled = true;
-        status.textContent = 'Dein Gesamtbetrag wird aktualisiert …';
+        status.textContent = message('updating');
         var overlay = document.createElement('div');
         overlay.setAttribute('role', 'status');
-        overlay.textContent = 'Dein Gesamtbetrag wird aktualisiert …';
+        overlay.textContent = message('updating');
         overlay.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:rgba(255,255,255,.9);display:flex;align-items:center;justify-content:center;padding:2rem;text-align:center';
         document.body.appendChild(overlay);
         try {
