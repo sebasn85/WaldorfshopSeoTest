@@ -42,10 +42,19 @@
         return data;
     }
 
+    function elements() {
+        panel = document.querySelector('[data-ws-climate]');
+        if (!panel) return false;
+        checkbox = panel.querySelector('[data-ws-climate-checkbox]');
+        status = panel.querySelector('[data-ws-climate-status]');
+        return !!checkbox && !!status;
+    }
+
     async function refresh() {
-        if (busy) return;
+        if (busy || !elements()) return;
         try {
             state = await request('GET');
+            if (!elements()) return;
             panel.hidden = !state.enabled;
             checkbox.checked = state.selected === true;
             checkbox.disabled = !state.eligible;
@@ -57,7 +66,9 @@
         }
     }
 
-    async function change() {
+    async function change(event) {
+        var selected = event.target.checked;
+        if (!elements()) return;
         if (busy || !state || !state.eligible) return;
         busy = true;
         checkbox.disabled = true;
@@ -68,12 +79,14 @@
         overlay.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:rgba(255,255,255,.9);display:flex;align-items:center;justify-content:center;padding:2rem;text-align:center';
         document.body.appendChild(overlay);
         try {
-            state = await request('POST', {selected: checkbox.checked, basketId: state.basketId});
+            state = await request('POST', {selected: selected, basketId: state.basketId});
             if (!window.jQuery || !window.jQuery.ajax) {
                 // Compatibility fallback when the normal Ceres event transport is unavailable.
                 window.location.reload();
                 return;
             }
+            elements();
+            panel.hidden = !state.enabled;
             checkbox.checked = state.selected === true;
             checkbox.disabled = !state.eligible;
             status.textContent = state.selected ? message('selected') : '';
@@ -93,7 +106,9 @@
         if (!panel) return;
         checkbox = panel.querySelector('[data-ws-climate-checkbox]');
         status = panel.querySelector('[data-ws-climate-status]');
-        checkbox.addEventListener('change', change);
+        document.addEventListener('change', function (event) {
+            if (event.target.hasAttribute('data-ws-climate-checkbox')) change(event);
+        });
         document.addEventListener('afterBasketChanged', refresh);
         document.addEventListener('submit', function (event) {
             if (busy) {event.preventDefault(); event.stopImmediatePropagation();}
