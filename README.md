@@ -41,7 +41,7 @@ Branch `feature/klimaversand-50-cent` is intended for unlinked plugin set **428*
 
 Enable only in the test set and apply the two default container links. The checkbox is initially unchecked and explicit acceptance is stored for the current basket only. The EUR 0.50 amount is fixed on the server. The contribution is added through Plenty's `AfterShippingCostCalculated::addAdditionalFee` and therefore is included in shipping costs, VAT and payment total; it does not add a product or increase `itemSum`. In the order/invoice it is included in the shipping-cost position, **not a separate contribution position**. A separate invoice line requires a further accounting integration. No DHL/GoGreen contract or label settings are changed by this plugin.
 
-Initial scope: baskets in EUR with gross-price display. CHF and net-price baskets are ineligible. Changes trigger full checkout reload so payment components receive the updated total. Every toggle verifies an exact 50-cent change and unchanged merchandise value; otherwise it restores the old consent and recalculates. The fee is recalculated from base shipping costs, not accumulated from the old total.
+Scope: baskets in EUR with gross or net-price display, including VAT-free export destinations. CHF baskets remain ineligible. Changes trigger full checkout reload so payment components receive the updated total. Every toggle verifies an exact 50-cent change and unchanged merchandise value; otherwise it restores the old consent and recalculates. The fee is recalculated from base shipping costs, not accumulated from the old total.
 
 ### Required preview checks before release
 
@@ -49,7 +49,7 @@ Initial scope: baskets in EUR with gross-price display. CHF and net-price basket
 - Repeated toggles and reload: no duplicate fee. Quantity, address, shipping and payment changes retain a single fee.
 - Merchandise just below/above every shipping threshold: contribution does not change shipping eligibility.
 - Shipping discount/coupon, mixed VAT and VAT-free export: exact delta and VAT must be checked in the real backend. Any unsupported case must fail closed.
-- Empty basket/new basket/new order: old consent does not carry over. EUR/net and CHF changes disable the option.
+- Empty basket/new basket/new order: old consent does not carry over. Gross/net changes retain availability for EUR; CHF changes disable the option.
 - Mobile and desktop: checkbox readable and reachable by keyboard; no order submission while updating.
 - Sandbox order/payment and invoice: identical confirmed amount, contribution included in shipping position. This final check requires a sandbox payment method; no real purchase is authorized.
 
@@ -62,3 +62,6 @@ Version 0.5.3 registers the translation section and includes server-rendered def
 
 ### 0.5.4
 Updates the authoritative checkout and basket through Ceres AJAX response events after changing the voluntary contribution, avoiding a full page reload. The checkout notice is available in DE, EN, FR, IT, ES and NL, with German fallback. A scoped UI adapter corrects remaining checkout control translations without changing customer or product data.
+
+### 0.5.7
+Allows the voluntary EUR 0.50 contribution for net-price baskets, including Switzerland and other VAT-free export destinations. The exact 50-cent total-change and unchanged merchandise-value checks remain enforced. Verify country and language changes in unlinked test set 429 before any live rollout.
