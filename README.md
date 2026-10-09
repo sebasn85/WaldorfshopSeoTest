@@ -58,3 +58,7 @@ The development checks do not substitute for these preview and accounting checks
 Checkout contribution copy, accessibility labels, and status/recovery messages use the active shop language through Plenty translations. Version 0.5.2 includes German, English, French, Italian, Spanish and Dutch. Server failures show a translated recovery instruction instead of exposing German API errors.
 
 Version 0.5.3 registers the translation section and includes server-rendered defaults for translation caches that return untranslated keys.
+
+
+### 0.5.4
+Updates the authoritative checkout and basket through Ceres AJAX response events after changing the voluntary contribution, avoiding a full page reload. The checkout notice is available in DE, EN, FR, IT, ES and NL, with German fallback. A scoped UI adapter corrects remaining checkout control translations without changing customer or product data.
