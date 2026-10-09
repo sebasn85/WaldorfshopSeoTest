@@ -40,6 +40,10 @@ namespace Plenty\Modules\Order\Shipping\Events {
 namespace IO\Services {
     class BasketService {
         public $repo;
+        public $maxVat = 19.0;
+        public $totalVats = [];
+        public function getMaxVatValue() { return $this->maxVat; }
+        public function getTotalVats(): array { return $this->totalVats; }
         public function getBasketForTemplate() { return (array)$this->repo->load(); }
     }
 }
@@ -64,11 +68,15 @@ namespace {
         'shippingProfileId'=>7,'itemSum'=>78.99,'shippingAmount'=>4.90,'basketAmount'=>83.89];
     $service = new ClimateContributionService($session, $repo, $checkout, $config);
     $breakCalculation = false;
-    $checkout->recalculate = function () use ($repo, $service, &$breakCalculation) {
+    $checkout->recalculate = function () use ($repo, $service, $session, $basketService, &$breakCalculation) {
         $basket = $repo->basket;
         $event = new AfterShippingCostCalculated('DHL', 0, $basket->shippingProfileId);
         $service->apply($event);
-        $basket->shippingAmount = ($basket->itemSum >= 79 ? 0 : 4.90) + $event->getAdditonalFee();
+        $fee = $event->getAdditonalFee();
+        if ($session->order && $session->order->isNet && count($basketService->getTotalVats()) === 0) {
+            $fee /= 1 + $basketService->getMaxVatValue() / 100;
+        }
+        $basket->shippingAmount = round(($basket->itemSum >= 79 ? 0 : 4.90) + $fee, 2);
         $basket->basketAmount = round($basket->itemSum + $basket->shippingAmount, 2)
             + ($breakCalculation ? 1 : 0);
     };
@@ -119,6 +127,14 @@ namespace {
     check(round($repo->basket->basketAmount, 2) === 79.5, 'Export profile recalculation does not duplicate fee');
     $service->setSelected(false, 11);
     check(round($repo->basket->basketAmount, 2) === 79.0, 'Export deselection restores the original total');
+    $basketService->maxVat = 7.0;
+    $result = $service->setSelected(true, 11);
+    check(round($result['basket']['basketAmount'], 2) === 79.5, 'Reduced VAT export adds exactly 50 net cents');
+    $service->setSelected(false, 11);
+    $basketService->totalVats = [19];
+    $result = $service->setSelected(true, 11);
+    check(round($result['basket']['basketAmount'], 2) === 79.5, 'Net customer with collected VAT keeps the gross display contribution');
+    $service->setSelected(false, 11);
     $session->order = null;
     $repo->basket->basketItems = [];
     check(!$service->eligible($repo->basket), 'Empty basket ineligible');
