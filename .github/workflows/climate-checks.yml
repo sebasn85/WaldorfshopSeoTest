@@ -1,0 +1,17 @@
+name: Climate contribution checks
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: PHP syntax
+        run: find src tests -name '*.php' -print0 | xargs -0 -n1 php -l
+      - name: Contribution calculation contracts
+        run: php tests/climate-contribution.php
+      - name: JavaScript syntax
+        run: node --check resources/js/climate-contribution.js
+      - name: JSON syntax
+        run: python3 -c "import json; [json.load(open(p)) for p in ['plugin.json', 'config.json']]"
