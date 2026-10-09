@@ -23,6 +23,8 @@ class ClimateContributionResource extends ApiResource
                 $selected,
                 (int)$this->request->get('basketId', 0)
             );
+            // ApiResponse enriches this event with authoritative basket and checkout data.
+            $this->response->eventData['AfterBasketChanged'] = ['basket' => null];
             return $this->response->create($state, 200);
         } catch (\RuntimeException $error) {
             return $this->response->create(['error' => $error->getMessage()], 409);
