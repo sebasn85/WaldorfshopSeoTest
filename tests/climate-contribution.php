@@ -14,7 +14,9 @@ namespace Plenty\Modules\Webshop\Contracts {
         public function setSessionValue($key, $value) { $this->values[$key] = $value; }
         public function getOrder() { return $this->order; }
     }
-    class CheckoutRepositoryContract {
+}
+namespace Plenty\Modules\Frontend\Contracts {
+    class Checkout {
         public $recalculate;
         public function setShippingProfileId($id, $force) { ($this->recalculate)(); }
     }
@@ -53,7 +55,7 @@ namespace {
     $GLOBALS['checks'] = 0;
     $session = new \Plenty\Modules\Webshop\Contracts\SessionStorageRepositoryContract();
     $repo = new \Plenty\Modules\Basket\Contracts\BasketRepositoryContract();
-    $checkout = new \Plenty\Modules\Webshop\Contracts\CheckoutRepositoryContract();
+    $checkout = new \Plenty\Modules\Frontend\Contracts\Checkout();
     $config = new \Plenty\Plugin\ConfigRepository();
     $basketService = new \IO\Services\BasketService();
     $basketService->repo = $repo;
