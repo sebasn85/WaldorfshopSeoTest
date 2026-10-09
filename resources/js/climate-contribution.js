@@ -17,9 +17,12 @@
             method: method, credentials: 'same-origin', cache: 'no-store', headers: headers,
             body: body ? JSON.stringify(body) : undefined
         });
-        var envelope = await response.json();
-        var data = envelope.data;
-        if (!response.ok) throw new Error(data.error || 'Bitte lade die Kasse neu und versuche es erneut.');
+        var envelope;
+        try { envelope = await response.json(); }
+        catch (error) { throw new Error('Der Versandbeitrag konnte nicht gespeichert werden. Bitte lade die Kasse neu.'); }
+        var data = envelope && envelope.data;
+        if (!response.ok) throw new Error((data && data.error) || 'Der Versandbeitrag konnte nicht gespeichert werden. Bitte lade die Kasse neu und versuche es erneut.');
+        if (!data || typeof data.enabled !== 'boolean') throw new Error('Der Versandbeitrag konnte nicht geladen werden. Bitte lade die Kasse neu.');
         return data;
     }
 
