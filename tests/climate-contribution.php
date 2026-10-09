@@ -27,14 +27,14 @@ namespace Plenty\Modules\Basket\Contracts {
         public function load() { return $this->basket; }
     }
 }
-namespace Plenty\Modules\Basket\Events\Basket {
-    class AfterBasketChanged {
-        private $basket;
-        private $shipping;
-        public function __construct($basket, $shipping) { $this->basket = $basket; $this->shipping = $shipping; }
-        public function getBasket() { return $this->basket; }
-        public function getShippingCosts() { return $this->shipping; }
-        public function setShippingCosts($cost) { $this->shipping = $cost; }
+namespace Plenty\Modules\Order\Shipping\Events {
+    class AfterShippingCostCalculated {
+        private $orderId;
+        private $fee = 0.0;
+        public function __construct($provider, $orderId, $profileId) { $this->orderId = $orderId; }
+        public function getOrderId() { return $this->orderId; }
+        public function getAdditonalFee() { return $this->fee; }
+        public function addAdditionalFee($fee) { $this->fee += $fee; }
     }
 }
 namespace IO\Services {
@@ -45,7 +45,7 @@ namespace IO\Services {
 }
 namespace {
     use WaldorfshopSeoTest\Services\ClimateContributionService;
-    use Plenty\Modules\Basket\Events\Basket\AfterBasketChanged;
+    use Plenty\Modules\Order\Shipping\Events\AfterShippingCostCalculated;
     function pluginApp($class) { return $GLOBALS['services'][$class]; }
     function check($condition, $message) {
         if (!$condition) throw new \RuntimeException($message);
@@ -66,9 +66,9 @@ namespace {
     $breakCalculation = false;
     $checkout->recalculate = function () use ($repo, $service, &$breakCalculation) {
         $basket = $repo->basket;
-        $event = new AfterBasketChanged($basket, $basket->itemSum >= 79 ? 0 : 4.90);
+        $event = new AfterShippingCostCalculated('DHL', 0, $basket->shippingProfileId);
         $service->apply($event);
-        $basket->shippingAmount = $event->getShippingCosts();
+        $basket->shippingAmount = ($basket->itemSum >= 79 ? 0 : 4.90) + $event->getAdditonalFee();
         $basket->basketAmount = round($basket->itemSum + $basket->shippingAmount, 2)
             + ($breakCalculation ? 1 : 0);
     };
@@ -98,6 +98,9 @@ namespace {
     try { $service->setSelected(true, 99); throw new \Exception('Unexpected stale basket success'); }
     catch (\RuntimeException $error) { check(!$service->selected($repo->basket), 'Stale basket cannot opt in'); }
     $service->setSelected(true, 10);
+    $existingOrderEvent = new AfterShippingCostCalculated('DHL', 123, 7);
+    $service->apply($existingOrderEvent);
+    check($existingOrderEvent->getAdditonalFee() === 0.0, 'Existing-order shipping calculation ignores basket consent');
     $repo->basket->id = 11;
     check(!$service->selected($repo->basket), 'New basket requires new consent');
     $repo->basket->currency = 'CHF';
@@ -108,7 +111,7 @@ namespace {
     $session->order = null;
     $repo->basket->basketItems = [];
     check(!$service->eligible($repo->basket), 'Empty basket ineligible');
-    $service->apply(new AfterBasketChanged($repo->basket, 0));
+    $service->state();
     check($session->getSessionValue(ClimateContributionService::CONSENT_KEY) === null, 'Empty basket clears consent');
     $repo->basket->basketItems = [1];
     $config->enabled = 'false';
