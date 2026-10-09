@@ -17,7 +17,7 @@
                 }
             });
             // Limit corrections to checkout controls; product and customer data stay untouched.
-            root.querySelectorAll('label,button,a,h1,h2,h3').forEach(function (element) {
+            root.querySelectorAll('label,label span,button,button span,a,a span,h1,h2,h3').forEach(function (element) {
                 Array.prototype.forEach.call(element.childNodes, function (node) {
                     if (node.nodeType !== 3) return;
                     var text = node.textContent.trim();
