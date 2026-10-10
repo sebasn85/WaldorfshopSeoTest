@@ -44,8 +44,9 @@ namespace IO\Services {
         public $calculationVat = null;
         public $totalVats = [];
         public $session;
-        public function getMaxVatValue() { return $this->maxVat; }
-        public function getTotalVats(): array { return $this->totalVats; }
+        public $inShippingCallback = false;
+        public function getMaxVatValue() { if ($this->inShippingCallback) throw new \RuntimeException("VAT lookup in shipping callback"); return $this->maxVat; }
+        public function getTotalVats(): array { if ($this->inShippingCallback) throw new \RuntimeException("Total VAT lookup in shipping callback"); return $this->totalVats; }
         public function getBasketForTemplate() {
             $basket = (array)$this->repo->load();
             if ($this->session->order && $this->session->order->isNet && count($this->totalVats) === 0) {
@@ -77,10 +78,14 @@ namespace {
         'shippingProfileId'=>7,'itemSum'=>78.99,'shippingAmount'=>4.90,'shippingAmountNet'=>4.90,'basketAmount'=>83.89];
     $service = new ClimateContributionService($session, $repo, $checkout, $config);
     $breakCalculation = false;
-    $checkout->recalculate = function () use ($repo, $service, $session, $basketService, &$breakCalculation) {
+    $recalculations = 0;
+    $checkout->recalculate = function () use ($repo, $service, $session, $basketService, &$breakCalculation, &$recalculations) {
+        $recalculations++;
         $basket = $repo->basket;
         $event = new AfterShippingCostCalculated('DHL', 0, $basket->shippingProfileId);
-        $service->apply($event);
+        $basketService->inShippingCallback = true;
+        try { $service->apply($event); }
+        finally { $basketService->inShippingCallback = false; }
         $fee = $event->getAdditonalFee();
         $base = ($basket->itemSum >= 79 ? 0 : 4.90);
         if ($session->order && $session->order->isNet && count($basketService->getTotalVats()) === 0) {
@@ -130,7 +135,7 @@ namespace {
     $repo->basket->currency = 'CHF';
     check(!$service->eligible($repo->basket), 'CHF ineligible');
     $repo->basket->currency = 'EUR';
-    $session->order = (object)['isNet'=>true];
+    $session->order = (object)['isNet'=>true, 'orderAmountVats'=>[]];
     check($service->eligible($repo->basket), 'EUR net basket remains eligible for export shipping');
     // A newly loaded basket starts with its own freshly calculated totals.
     ($checkout->recalculate)();
@@ -157,7 +162,21 @@ namespace {
     $result = $service->setSelected(true, 11);
     check(round($result['basket']['basketAmount'], 2) === 79.5, 'Reduced VAT export adds exactly 50 net cents');
     $service->setSelected(false, 11);
+    // Older export sessions may have charged only 42 net cents. A customer
+    // must be able to revoke that fee without a rollback and second calculation.
+    $repo->basket->shippingAmount = 0.50;
+    $repo->basket->shippingAmountNet = 0.42;
+    $repo->basket->basketAmount = 79.42;
+    $session->setSessionValue(ClimateContributionService::CONSENT_KEY, [
+        'basketId'=>11, 'accepted'=>true, 'netFeeFactor'=>1.0
+    ]);
+    $callsBeforeRemoval = $recalculations;
+    $result = $service->setSelected(false, 11);
+    check(!$result['selected'], 'Legacy export consent can be revoked');
+    check($result['basket']['basketAmount'] === 79.0, 'Legacy removal removes the amount actually charged');
+    check($recalculations === $callsBeforeRemoval + 1, 'Legacy removal needs only one shipping calculation');
     $basketService->totalVats = [19];
+    $session->order->orderAmountVats = [19];
     $result = $service->setSelected(true, 11);
     check(round($result['basket']['basketAmount'], 2) === 79.5, 'Net customer with collected VAT keeps the gross display contribution');
     $service->setSelected(false, 11);
