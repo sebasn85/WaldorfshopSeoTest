@@ -49,6 +49,7 @@ namespace IO\Services {
         public function getTotalVats(): array { if ($this->inShippingCallback) throw new \RuntimeException("Total VAT lookup in shipping callback"); return $this->totalVats; }
         public function getBasketForTemplate() {
             $basket = (array)$this->repo->load();
+            $basket['totalVats'] = $this->totalVats;
             if ($this->session->order && $this->session->order->isNet && count($this->totalVats) === 0) {
                 $basket['shippingAmount'] = $basket['shippingAmountNet'];
             }
@@ -135,7 +136,8 @@ namespace {
     $repo->basket->currency = 'CHF';
     check(!$service->eligible($repo->basket), 'CHF ineligible');
     $repo->basket->currency = 'EUR';
-    $session->order = (object)['isNet'=>true, 'orderAmountVats'=>[]];
+    $session->order = (object)['isNet'=>true, 'orderAmountVats'=>[19]];
+    // Legacy order metadata can retain source VAT while IO displays VAT-free net totals.
     check($service->eligible($repo->basket), 'EUR net basket remains eligible for export shipping');
     // A newly loaded basket starts with its own freshly calculated totals.
     ($checkout->recalculate)();
