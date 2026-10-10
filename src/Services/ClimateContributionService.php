@@ -66,7 +66,10 @@ class ClimateContributionService
             // The shipping event takes gross fees, which Plenty converts to net.
             // Never request total VAT while shipping costs are being calculated:
             // that service can calculate the basket (and this shipping hook) again.
-            if ($order && $order->isNet && empty($order->orderAmountVats)) {
+            $consent = $this->session->getSessionValue(self::CONSENT_KEY);
+            $netDisplay = isset($consent['netDisplay'])
+                ? $consent['netDisplay'] : empty($order->orderAmountVats);
+            if ($order && $order->isNet && $netDisplay) {
                 $fee *= $this->netFeeFactor($basket, false);
             }
             $event->addAdditionalFee($fee);
@@ -97,13 +100,21 @@ class ClimateContributionService
         if (!$this->eligible($basket)) {
             $this->session->setSessionValue(self::CONSENT_KEY, null);
         }
+        $templateBasket = pluginApp(BasketService::class)->getBasketForTemplate();
+        $consent = $this->session->getSessionValue(self::CONSENT_KEY);
+        if ($this->selected($basket)) {
+            $order = $this->session->getOrder();
+            $consent['netDisplay'] = $order && $order->isNet
+                && count($templateBasket['totalVats'] ?? []) === 0;
+            $this->session->setSessionValue(self::CONSENT_KEY, $consent);
+        }
         return [
             'enabled' => $this->enabled(),
             'eligible' => $this->eligible($basket),
             'selected' => $this->selected($basket),
             'amount' => self::AMOUNT,
             'basketId' => $basket ? (int)$basket->id : 0,
-            'basket' => pluginApp(BasketService::class)->getBasketForTemplate()
+            'basket' => $templateBasket
         ];
     }
 
@@ -125,6 +136,8 @@ class ClimateContributionService
             'accepted' => $selected,
             'amount' => self::AMOUNT,
             'netFeeFactor' => $netFeeFactor,
+            'netDisplay' => $this->session->getOrder() && $this->session->getOrder()->isNet
+                && count($before['totalVats'] ?? []) === 0,
             'acceptedAt' => $selected ? time() : null,
             'textVersion' => '2026-10-09',
             'calculationVersion' => 2
