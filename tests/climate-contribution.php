@@ -181,7 +181,15 @@ namespace {
     $session->order->orderAmountVats = [19];
     $result = $service->setSelected(true, 11);
     check(round($result['basket']['basketAmount'], 2) === 79.5, 'Net customer with collected VAT keeps the gross display contribution');
+    $basketService->totalVats = [];
+    $basketService->maxVat = 19;
+    ($checkout->recalculate)();
+    $result = $service->state();
+    check($result['recalculated'], 'Country switch corrects cached gross mode outside shipping hook');
+    check($result['basket']['basketAmount'] === 79.5, 'Country switch preserves exactly 50 net cents');
+    check(!$service->state()['recalculated'], 'Corrected country mode does not repeat recalculation');
     $service->setSelected(false, 11);
+    check($repo->basket->basketAmount === 79.0, 'Removal after country switch restores base total');
     $session->order = null;
     $repo->basket->basketItems = [];
     check(!$service->eligible($repo->basket), 'Empty basket ineligible');
