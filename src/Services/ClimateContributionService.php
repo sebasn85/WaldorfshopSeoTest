@@ -62,30 +62,33 @@ class ClimateContributionService
         if ($this->selected($basket)) {
             $fee = self::AMOUNT;
             $order = $this->session->getOrder();
-            $basketService = pluginApp(BasketService::class);
             // IO displays net totals only for net orders without collected VAT.
             // The shipping event takes gross fees, which Plenty converts to net.
-            // Use the same maximum basket VAT rate as the shipping calculation.
-            if ($order && $order->isNet && count($basketService->getTotalVats()) === 0) {
-                $fee *= $this->netFeeFactor($basket);
+            // Never request total VAT while shipping costs are being calculated:
+            // that service can calculate the basket (and this shipping hook) again.
+            if ($order && $order->isNet && empty($order->orderAmountVats)) {
+                $fee *= $this->netFeeFactor($basket, false);
             }
             $event->addAdditionalFee($fee);
         }
     }
 
-    private function netFeeFactor($basket): float
+    private function netFeeFactor($basket, bool $allowVatLookup = true): float
     {
         // Export item VAT can become zero after a reload although the shipping
         // calculator still removes the source VAT. Read its gross/net amounts.
         if ($basket->shippingAmount > 0 && $basket->shippingAmountNet > 0) {
-            return $basket->shippingAmount / $basket->shippingAmountNet;
+            return round($basket->shippingAmount / $basket->shippingAmountNet, 3);
         }
         $consent = $this->session->getSessionValue(self::CONSENT_KEY);
         if (is_array($consent) && (int)$consent['basketId'] === (int)$basket->id
             && isset($consent['netFeeFactor'])) {
             return (float)$consent['netFeeFactor'];
         }
-        return 1 + max(0, pluginApp(BasketService::class)->getMaxVatValue()) / 100;
+        // The initial request may query VAT; the shipping callback must not.
+        return $allowVatLookup
+            ? 1 + max(0, pluginApp(BasketService::class)->getMaxVatValue()) / 100
+            : 1.0;
     }
 
     public function state(): array
@@ -123,7 +126,8 @@ class ClimateContributionService
             'amount' => self::AMOUNT,
             'netFeeFactor' => $netFeeFactor,
             'acceptedAt' => $selected ? time() : null,
-            'textVersion' => '2026-10-09'
+            'textVersion' => '2026-10-09',
+            'calculationVersion' => 2
         ]);
 
         try {
@@ -146,7 +150,13 @@ class ClimateContributionService
                     $difference = (int)round(($after['basket']['basketAmount'] - $before['basketAmount']) * 100);
                 }
             }
-            if ($difference !== $expectedCents
+            // A consent saved by 0.5.7-0.5.9 may contain a 42-49-cent net
+            // contribution. Removing it must remove the amount actually charged,
+            // rather than restore a fee the customer has explicitly deselected.
+            $legacyRemoval = !$selected && is_array($previous)
+                && !isset($previous['calculationVersion']) && $order && $order->isNet
+                && $difference >= -51 && $difference <= -40;
+            if (($difference !== $expectedCents && !$legacyRemoval)
                 || (int)round($after['basket']['itemSum'] * 100) !== (int)round($before['itemSum'] * 100)) {
                 throw new \RuntimeException('Der Versandbeitrag konnte nicht eindeutig berechnet werden. Bitte lade die Kasse neu.');
             }
