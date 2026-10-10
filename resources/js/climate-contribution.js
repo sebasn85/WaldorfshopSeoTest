@@ -54,6 +54,7 @@
         if (busy || !elements()) return;
         try {
             state = await request('GET');
+            if (state.recalculated) { window.location.reload(); return; }
             if (!elements()) return;
             panel.hidden = !state.enabled;
             checkbox.checked = state.selected === true;
