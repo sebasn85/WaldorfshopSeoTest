@@ -102,17 +102,28 @@ class ClimateContributionService
         }
         $templateBasket = pluginApp(BasketService::class)->getBasketForTemplate();
         $consent = $this->session->getSessionValue(self::CONSENT_KEY);
+        $recalculated = false;
         if ($this->selected($basket)) {
             $order = $this->session->getOrder();
-            $consent['netDisplay'] = $order && $order->isNet
+            $netDisplay = $order && $order->isNet
                 && count($templateBasket['totalVats'] ?? []) === 0;
+            $recalculated = isset($consent['netDisplay'])
+                && $consent['netDisplay'] !== $netDisplay;
+            $consent['netDisplay'] = $netDisplay;
             $this->session->setSessionValue(self::CONSENT_KEY, $consent);
+            // Country changes may have used the previous display tax mode.
+            // Correct once outside the shipping hook, then refresh checkout totals.
+            if ($recalculated) {
+                $this->checkout->setShippingProfileId((int)$basket->shippingProfileId, true);
+                $templateBasket = pluginApp(BasketService::class)->getBasketForTemplate();
+            }
         }
         return [
             'enabled' => $this->enabled(),
             'eligible' => $this->eligible($basket),
             'selected' => $this->selected($basket),
             'amount' => self::AMOUNT,
+            'recalculated' => $recalculated,
             'basketId' => $basket ? (int)$basket->id : 0,
             'basket' => $templateBasket
         ];
